@@ -56,6 +56,12 @@ class KuKirinProtocolService {
         subtitle: 'Lower draw for longer range and smoother city riding.',
         value: true,
       ),
+      ToggleSetting(
+        id: ToggleSettingId.childMode,
+        title: 'Child Mode',
+        subtitle: 'Reduced power and speed.',
+        value: false,
+      ),
     ];
   }
 
