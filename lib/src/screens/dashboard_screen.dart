@@ -200,13 +200,16 @@ class DashboardScreen extends StatelessWidget {
 const List<ControlActionKind> _actions = [
   ControlActionKind.lock,
   ControlActionKind.unlock,
-  ControlActionKind.lights,
-  ControlActionKind.horn,
+
   ControlActionKind.ecoMode,
   ControlActionKind.driveMode,
   ControlActionKind.sportMode,
-  ControlActionKind.singleMotor,
-  ControlActionKind.dualMotor,
+
+  ControlActionKind.childModeOn,
+  ControlActionKind.childModeOff,
+
+  ControlActionKind.adjustAccelerator,
+  ControlActionKind.resetOdom,
 ];
 
 class _HeroPanel extends StatelessWidget {
