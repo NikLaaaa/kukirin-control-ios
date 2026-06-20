@@ -71,6 +71,12 @@ class ScooterAppController extends ChangeNotifier {
       connectionState == AppConnectionState.connected &&
       activeProfile.isBindable;
 
+  bool supportsAction(ControlActionKind action) =>
+      isDemoMode || !canSendLiveCommands || _protocolService.supportsLiveAction(action);
+
+  bool supportsRideSetting(ToggleSettingId id) =>
+      isDemoMode || !canSendLiveCommands || _protocolService.supportsLiveSetting(id);
+
   void initialize() {
     _bleStatusSubscription ??= _bleRepository.watchBleStatus().listen(
       (status) {
@@ -106,7 +112,7 @@ class ScooterAppController extends ChangeNotifier {
 
     activeProfile = nextProfile;
     statusMessage =
-        '${activeProfile.name} selected. ${activeProfile.verified ? 'Verified commands enabled.' : 'Waiting for verified UUID mapping.'}';
+        '${activeProfile.name} selected. ${activeProfile.verified ? 'FFF0 live commands enabled for mapped actions.' : 'Waiting for verified UUID mapping.'}';
     notifyListeners();
   }
 
@@ -200,7 +206,7 @@ class ScooterAppController extends ChangeNotifier {
                   protocolBound: activeProfile.isBindable,
                   updatedAt: DateTime.now(),
                   statusLine: activeProfile.isBindable
-                      ? 'Profile is verified. Live telemetry binding can start.'
+                      ? 'Profile is verified. Listening for FFF2 telemetry notifications now.'
                       : 'BLE transport is open, but KuKirin telemetry mapping still needs verified UUIDs.',
                 );
                 notifyListeners();
@@ -315,12 +321,23 @@ class ScooterAppController extends ChangeNotifier {
         return;
       }
 
+      if (!_protocolService.supportsLiveAction(action)) {
+        statusMessage =
+            '${action.label} is not mapped for the ${activeProfile.name} profile yet.';
+        return;
+      }
+
       try {
         await _bleRepository.writeCommand(
           deviceId: connectedDevice!.id,
           profile: activeProfile,
           payload: _protocolService.encodeCommand(action),
         );
+        snapshot = _protocolService.applyDemoAction(snapshot, action).copyWith(
+          statusLine: 'Live command "${action.label}" sent to the scooter.',
+          updatedAt: DateTime.now(),
+        );
+        _syncSettingsFromSnapshot();
         statusMessage = 'Live command "${action.label}" sent.';
       } catch (error) {
         lastError = error.toString();
@@ -351,6 +368,14 @@ class ScooterAppController extends ChangeNotifier {
       if (!canSendLiveCommands || connectedDevice == null) {
         statusMessage =
             '${current.title} updated in UI, but live write is blocked until protocol mapping is verified.';
+        return;
+      }
+
+      if (!_protocolService.supportsLiveSetting(id)) {
+        rideSettings[id] = current;
+        snapshot = _applySettingToSnapshot(snapshot, id, current.value);
+        statusMessage =
+            '${current.title} is not mapped for the ${activeProfile.name} profile yet.';
         return;
       }
 

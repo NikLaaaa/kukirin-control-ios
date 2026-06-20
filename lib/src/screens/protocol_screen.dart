@@ -25,7 +25,7 @@ class ProtocolScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'This screen is where we finish the real business logic: choose a model family, inspect discovered services, and wire verified BLE packets.',
+                'Choose the active BLE profile, inspect discovered services, and watch the raw FFF2 notifications that drive telemetry decoding.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppPalette.textSecondary,
                 ),
@@ -163,15 +163,15 @@ class ProtocolScreen extends StatelessWidget {
                       const SizedBox(height: 12),
                       const _BulletLine(
                         text:
-                            'The official KuKirin app or dashboard traffic must be captured once per model family to identify write and notify characteristics.',
+                            'FFF0 / FFF1 / FFF2 is now wired for live sessions, but different KuKirin dashboards may still expose variant packet layouts.',
                       ),
                       const _BulletLine(
                         text:
-                            'Telemetry packets need field mapping for speed, voltage, lock state, mode, cruise control, and motor configuration.',
+                            'Telemetry packets still need model-by-model confirmation for speed, voltage, odometer, RPM, lock state, cruise, and zero-start flags.',
                       ),
                       const _BulletLine(
                         text:
-                            'After UUIDs are verified, replace the placeholders in KuKirinProtocolService.encodeCommand() and decodeTelemetry().',
+                            'If a model uses different write packets for lights, horn, or motor switching, add them in KuKirinProtocolService before enabling those controls live.',
                       ),
                     ],
                   ),

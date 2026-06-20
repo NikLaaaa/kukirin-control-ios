@@ -4,20 +4,28 @@ import '../models/scooter_snapshot.dart';
 import '../models/toggle_setting.dart';
 
 class KuKirinProtocolService {
+  static const String _serviceUuid = '0000fff0-0000-1000-8000-00805f9b34fb';
+  static const String _writeUuid = '0000fff1-0000-1000-8000-00805f9b34fb';
+  static const String _notifyUuid = '0000fff2-0000-1000-8000-00805f9b34fb';
+
   List<ProtocolProfile> get profiles => const <ProtocolProfile>[
     ProtocolProfile(
-      id: 'universal-placeholder',
-      name: 'Universal KuKirin Placeholder',
-      family: 'All models',
+      id: 'kukirin-fff0-v1',
+      name: 'KuKirin FFF0 Live Profile',
+      family: 'Models exposing FFF0 / FFF1 / FFF2',
       note:
-          'Safe default for UI development. Replace with verified UUIDs and packet map before sending commands.',
+          'Uses the live FFF0 BLE service with FFF1 writes and FFF2 telemetry notifications.',
+      serviceUuid: _serviceUuid,
+      writeCharacteristicUuid: _writeUuid,
+      notifyCharacteristicUuid: _notifyUuid,
+      verified: true,
     ),
     ProtocolProfile(
       id: 'touch-dashboard-2025',
       name: 'Touch Dashboard Family',
       family: 'G2 / G3 / G4 / newer touch displays',
       note:
-          'Prepared for modern touch dashboards once a real GATT capture from the official app is available.',
+          'Fallback profile for future variants if they do not expose the FFF0 BLE service.',
     ),
     ProtocolProfile(
       id: 'legacy-kugoo-lcd',
@@ -51,44 +59,65 @@ class KuKirinProtocolService {
     ];
   }
 
+  bool supportsLiveAction(ControlActionKind action) =>
+      _actionPacketHex(action) != null;
+
+  bool supportsLiveSetting(ToggleSettingId settingId) =>
+      _settingPacketHex(settingId, true) != null;
+
   String draftCommand(ControlActionKind action) {
-    return 'AA 55 ${action.draftToken} <payload> <checksum>';
+    return _actionPacketHex(action) ?? '${action.draftToken} (unsupported)';
   }
 
   String draftSetting(ToggleSettingId settingId, bool value) {
-    final settingName = switch (settingId) {
-      ToggleSettingId.cruiseControl => 'SET_CRUISE',
-      ToggleSettingId.zeroStart => 'SET_ZERO_START',
-      ToggleSettingId.singleMotorMode => 'SET_SINGLE_MOTOR',
-    };
-
-    final payload = value ? '01' : '00';
-    return 'AA 55 $settingName $payload <checksum>';
+    return _settingPacketHex(settingId, value) ??
+        '${settingId.name.toUpperCase()} (unsupported)';
   }
 
   List<int> encodeCommand(ControlActionKind action) {
-    throw UnsupportedError(
-      'Real KuKirin command encoding is intentionally blocked until a verified protocol capture is added.',
-    );
+    final packetHex = _actionPacketHex(action);
+    if (packetHex == null) {
+      throw UnsupportedError(
+        'No live KuKirin packet is mapped for ${action.label} yet.',
+      );
+    }
+
+    return _hexToBytes(packetHex);
   }
 
   List<int> encodeSetting(ToggleSettingId settingId, bool value) {
-    throw UnsupportedError(
-      'Real KuKirin setting encoding is intentionally blocked until a verified protocol capture is added.',
-    );
+    final packetHex = _settingPacketHex(settingId, value);
+    if (packetHex == null) {
+      throw UnsupportedError(
+        'No live KuKirin packet is mapped for ${settingId.name} yet.',
+      );
+    }
+
+    return _hexToBytes(packetHex);
   }
 
   ScooterSnapshot decodeTelemetry(
     List<int> packet, {
     required ScooterSnapshot previous,
   }) {
+    final parsed = _tryDecodeKnownTelemetry(packet, previous: previous);
+    if (parsed != null) {
+      return parsed.copyWith(
+        protocolBound: true,
+        isLiveData: true,
+        updatedAt: DateTime.now(),
+        lastPacketHex: toHex(packet),
+        statusLine: 'Live telemetry packet decoded from FFF2 notifications.',
+      );
+    }
+
     return previous.copyWith(
       protocolBound: true,
       isLiveData: true,
       updatedAt: DateTime.now(),
       lastPacketHex: toHex(packet),
       statusLine:
-          'Live BLE packets detected. Map fields in KuKirinProtocolService.decodeTelemetry().',
+          'Live FFF2 packets detected. Command writes are active, but this packet layout still needs field mapping for telemetry.',
     );
   }
 
@@ -126,13 +155,13 @@ class KuKirinProtocolService {
       ControlActionKind.driveMode => snapshot.copyWith(
         rideMode: RideMode.drive,
         updatedAt: DateTime.now(),
-        statusLine: 'Demo mode switched to Drive.',
+        statusLine: 'Demo mode switched to Sport.',
         lastPacketHex: draftCommand(action),
       ),
       ControlActionKind.sportMode => snapshot.copyWith(
         rideMode: RideMode.sport,
         updatedAt: DateTime.now(),
-        statusLine: 'Demo mode switched to Sport.',
+        statusLine: 'Demo mode switched to Race.',
         lastPacketHex: draftCommand(action),
       ),
       ControlActionKind.horn => snapshot.copyWith(
@@ -143,13 +172,13 @@ class KuKirinProtocolService {
       ControlActionKind.singleMotor => snapshot.copyWith(
         singleMotorMode: true,
         updatedAt: DateTime.now(),
-        statusLine: 'Demo mode switched to single motor.',
+        statusLine: 'Single motor mode is not mapped for the live profile yet.',
         lastPacketHex: draftCommand(action),
       ),
       ControlActionKind.dualMotor => snapshot.copyWith(
         singleMotorMode: false,
         updatedAt: DateTime.now(),
-        statusLine: 'Demo mode switched to dual motor.',
+        statusLine: 'Dual motor mode is not mapped for the live profile yet.',
         lastPacketHex: draftCommand(action),
       ),
     };
@@ -176,7 +205,7 @@ class KuKirinProtocolService {
       ToggleSettingId.singleMotorMode => snapshot.copyWith(
         singleMotorMode: value,
         updatedAt: DateTime.now(),
-        statusLine: 'Motor mode updated in demo mode.',
+        statusLine: 'Motor mode setting is not mapped for the live profile yet.',
         lastPacketHex: draftSetting(settingId, value),
       ),
     };
@@ -210,6 +239,7 @@ class KuKirinProtocolService {
     return snapshot.copyWith(
       speedKmh: nextSpeed,
       currentDrawA: 10 + (nextSpeed / 2),
+      motorRpm: (nextSpeed * 44).round(),
       voltage: 52.8 - ((100 - nextBattery) * 0.03),
       controllerTempC: 37 + (tick % 4).toDouble(),
       batteryPercent: nextBattery,
@@ -225,5 +255,95 @@ class KuKirinProtocolService {
     return data
         .map((value) => value.toRadixString(16).padLeft(2, '0').toUpperCase())
         .join(' ');
+  }
+
+  String? _actionPacketHex(ControlActionKind action) {
+    return switch (action) {
+      ControlActionKind.lock => 'F041',
+      ControlActionKind.unlock => 'F042',
+      ControlActionKind.ecoMode => 'F04C0301',
+      ControlActionKind.driveMode => 'F04C0302',
+      ControlActionKind.sportMode => 'F04C0303',
+      ControlActionKind.lights => null,
+      ControlActionKind.horn => null,
+      ControlActionKind.singleMotor => null,
+      ControlActionKind.dualMotor => null,
+    };
+  }
+
+  String? _settingPacketHex(ToggleSettingId settingId, bool value) {
+    return switch (settingId) {
+      ToggleSettingId.cruiseControl => value ? 'F04C1301' : 'F04C1300',
+      ToggleSettingId.zeroStart => value ? 'F04C0201' : 'F04C0200',
+      ToggleSettingId.singleMotorMode => null,
+    };
+  }
+
+  List<int> _hexToBytes(String hex) {
+    final sanitized = hex.replaceAll(' ', '');
+    if (sanitized.length.isOdd) {
+      throw FormatException('Packet hex length must be even: $hex');
+    }
+
+    return <int>[
+      for (var index = 0; index < sanitized.length; index += 2)
+        int.parse(sanitized.substring(index, index + 2), radix: 16),
+    ];
+  }
+
+  ScooterSnapshot? _tryDecodeKnownTelemetry(
+    List<int> packet, {
+    required ScooterSnapshot previous,
+  }) {
+    if (packet.length < 10) {
+      return null;
+    }
+
+    final modeValue = packet[7];
+    if (modeValue < 1 || modeValue > 3) {
+      return null;
+    }
+
+    final speedRaw = packet[0] | (packet[1] << 8);
+    final voltageRaw = packet[2] | (packet[3] << 8);
+    final batteryPercent = packet[4];
+    final flags = packet[5];
+    final rpmRaw = packet[8] | (packet[9] << 8);
+
+    if (batteryPercent > 100 || speedRaw > 2000 || voltageRaw > 2000) {
+      return null;
+    }
+
+    final nextMode = switch (modeValue) {
+      1 => RideMode.eco,
+      2 => RideMode.drive,
+      3 => RideMode.sport,
+      _ => previous.rideMode,
+    };
+
+    final speed = speedRaw / 10.0;
+    final voltage = voltageRaw / 10.0;
+    final odometer = packet.length >= 14
+        ? ((packet[10]) |
+                  (packet[11] << 8) |
+                  (packet[12] << 16) |
+                  (packet[13] << 24)) /
+              10.0
+        : previous.odometerKm;
+
+    return previous.copyWith(
+      rideMode: nextMode,
+      speedKmh: speed,
+      voltage: voltage,
+      batteryPercent: batteryPercent,
+      odometerKm: odometer,
+      tripKm: previous.tripKm,
+      estimatedRangeKm: batteryPercent * 0.42,
+      currentDrawA: previous.currentDrawA,
+      motorRpm: rpmRaw,
+      cruiseEnabled: (flags & 0x01) != 0,
+      zeroStartEnabled: (flags & 0x02) != 0,
+      locked: (flags & 0x04) != 0,
+    );
   }
 }

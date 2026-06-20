@@ -3,8 +3,8 @@ enum RideMode { eco, drive, sport }
 extension RideModeX on RideMode {
   String get label => switch (this) {
     RideMode.eco => 'Eco',
-    RideMode.drive => 'Drive',
-    RideMode.sport => 'Sport',
+    RideMode.drive => 'Sport',
+    RideMode.sport => 'Race',
   };
 }
 
@@ -19,6 +19,7 @@ class ScooterSnapshot {
     required this.tripKm,
     required this.estimatedRangeKm,
     required this.currentDrawA,
+    required this.motorRpm,
     required this.locked,
     required this.lightsEnabled,
     required this.cruiseEnabled,
@@ -40,6 +41,7 @@ class ScooterSnapshot {
   final double tripKm;
   final double estimatedRangeKm;
   final double currentDrawA;
+  final int motorRpm;
   final bool locked;
   final bool lightsEnabled;
   final bool cruiseEnabled;
@@ -62,6 +64,7 @@ class ScooterSnapshot {
       tripKm: 0,
       estimatedRangeKm: 0,
       currentDrawA: 0,
+      motorRpm: 0,
       locked: false,
       lightsEnabled: false,
       cruiseEnabled: false,
@@ -85,6 +88,7 @@ class ScooterSnapshot {
       tripKm: 12.8,
       estimatedRangeKm: 31.0,
       currentDrawA: 12.6,
+      motorRpm: 860,
       locked: false,
       lightsEnabled: true,
       cruiseEnabled: false,
@@ -108,6 +112,7 @@ class ScooterSnapshot {
     double? tripKm,
     double? estimatedRangeKm,
     double? currentDrawA,
+    int? motorRpm,
     bool? locked,
     bool? lightsEnabled,
     bool? cruiseEnabled,
@@ -129,6 +134,7 @@ class ScooterSnapshot {
       tripKm: tripKm ?? this.tripKm,
       estimatedRangeKm: estimatedRangeKm ?? this.estimatedRangeKm,
       currentDrawA: currentDrawA ?? this.currentDrawA,
+      motorRpm: motorRpm ?? this.motorRpm,
       locked: locked ?? this.locked,
       lightsEnabled: lightsEnabled ?? this.lightsEnabled,
       cruiseEnabled: cruiseEnabled ?? this.cruiseEnabled,

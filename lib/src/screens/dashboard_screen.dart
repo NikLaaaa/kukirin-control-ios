@@ -58,13 +58,13 @@ class DashboardScreen extends StatelessWidget {
                     _MetricCard(
                       title: 'Mode',
                       value: snapshot.rideMode.label,
-                      helper: controller.connectionLabel(),
+                      helper:
+                          snapshot.cruiseEnabled ? 'Cruise on' : 'Cruise off',
                     ),
                     _MetricCard(
                       title: 'Voltage',
                       value: '${snapshot.voltage.toStringAsFixed(1)} V',
-                      helper:
-                          '${snapshot.currentDrawA.toStringAsFixed(1)} A draw',
+                      helper: controller.connectionLabel(),
                     ),
                     _MetricCard(
                       title: 'Speed',
@@ -72,22 +72,18 @@ class DashboardScreen extends StatelessWidget {
                       helper: 'Battery ${snapshot.batteryPercent}%',
                     ),
                     _MetricCard(
-                      title: 'Range',
-                      value:
-                          '${snapshot.estimatedRangeKm.toStringAsFixed(0)} km',
-                      helper: 'Trip ${snapshot.tripKm.toStringAsFixed(1)} km',
+                      title: 'Odometer',
+                      value: '${snapshot.odometerKm.toStringAsFixed(1)} km',
+                      helper: 'Zero start ${snapshot.zeroStartEnabled ? 'On' : 'Off'}',
                     ),
                     _MetricCard(
-                      title: 'Controller',
-                      value: '${snapshot.controllerTempC.toStringAsFixed(1)} C',
-                      helper:
-                          'Odo ${snapshot.odometerKm.toStringAsFixed(1)} km',
+                      title: 'RPM',
+                      value: '${snapshot.motorRpm}',
+                      helper: 'Range ${snapshot.estimatedRangeKm.toStringAsFixed(0)} km',
                     ),
                     _MetricCard(
-                      title: 'Drive setup',
-                      value: snapshot.singleMotorMode
-                          ? 'Single motor'
-                          : 'Dual motor',
+                      title: 'Lock State',
+                      value: snapshot.locked ? 'Locked' : 'Unlocked',
                       helper: snapshot.locked ? 'Locked' : 'Unlocked',
                     ),
                   ],
@@ -96,7 +92,7 @@ class DashboardScreen extends StatelessWidget {
                 _SectionTitle(
                   title: 'Quick Controls',
                   subtitle:
-                      'Buttons already drive the demo flow and draft live BLE commands for future protocol binding.',
+                      'Mapped FFF1 commands send live to the scooter. Unmapped controls stay disabled on live sessions.',
                 ),
                 const SizedBox(height: 14),
                 Wrap(
@@ -106,7 +102,9 @@ class DashboardScreen extends StatelessWidget {
                     for (final action in _actions)
                       _ActionButton(
                         action: action,
-                        enabled: controlsEnabled,
+                        enabled:
+                            controlsEnabled &&
+                            controller.supportsAction(action),
                         onTap: () => controller.sendAction(action),
                       ),
                   ],
@@ -115,7 +113,7 @@ class DashboardScreen extends StatelessWidget {
                 _SectionTitle(
                   title: 'Ride Settings',
                   subtitle:
-                      'Mirrors the toggles you would normally change from the dashboard.',
+                      'Cruise and zero start write live packets. Unmapped settings stay disabled during live sessions.',
                 ),
                 const SizedBox(height: 14),
                 Card(
@@ -130,7 +128,11 @@ class DashboardScreen extends StatelessWidget {
                         ) ...[
                           _SettingTile(
                             setting: settings[index],
-                            enabled: controlsEnabled,
+                            enabled:
+                                controlsEnabled &&
+                                controller.supportsRideSetting(
+                                  settings[index].id,
+                                ),
                             onChanged: (value) => controller.toggleRideSetting(
                               settings[index].id,
                               value,

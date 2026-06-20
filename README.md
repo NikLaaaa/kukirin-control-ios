@@ -4,8 +4,9 @@ KuKirin Link is an iOS-first Flutter application scaffold for KuKirin electric s
 
 - BLE device scanning and connection flow
 - A polished scooter dashboard UI
-- Quick control buttons for lock, lights, horn, ride modes, and motor mode
-- Ride setting toggles for cruise control, zero start, and single motor mode
+- Live FFF0 BLE profile with FFF1 writes and FFF2 notification subscription
+- Quick control buttons for lock, unlock, and ride modes
+- Ride setting toggles for cruise control and zero start
 - A protocol lab screen for inspecting discovered GATT services and characteristics
 - Demo mode so the product can be shown before live protocol binding is finished
 
@@ -15,21 +16,27 @@ KuKirin Link is an iOS-first Flutter application scaffold for KuKirin electric s
 - BLE layer split into a repository
 - KuKirin command and telemetry logic split into a protocol service
 - UI architecture prepared for multiple scooter model families
+- Live command packets wired for:
+  - `F041` lock
+  - `F042` unlock
+  - `F04C0200` and `F04C0201` zero start off/on
+  - `F04C0301`, `F04C0302`, `F04C0303` for Eco, Sport, Race
+  - `F04C1300` and `F04C1301` cruise off/on
 - iOS Bluetooth permission strings added to `Info.plist`
-- Unit tests for the demo protocol helpers
+- Unit tests for live packet encoding and conservative telemetry decoding
 
 ## What still needs real scooter verification
 
-The project is intentionally safe for business use: it does not send guessed packets to a real scooter yet.
+The project now sends only the packets that were explicitly mapped. Remaining controls stay blocked on live sessions instead of sending guessed data.
 
-Before live KuKirin control can be enabled for a specific model family, you still need:
+Before the full KuKirin controller can be called production ready, you still need:
 
-1. A real BLE capture from the official KuKirin app or from the scooter dashboard session
-2. Verified service UUID, write characteristic UUID, and notify characteristic UUID
-3. Packet mapping for telemetry fields like speed, voltage, ride mode, lock state, and settings
-4. Packet mapping for write actions like lock, unlock, lights, horn, cruise, zero start, and motor mode
+1. Real FFF2 notification samples from your target models to confirm telemetry byte layout
+2. Model-by-model confirmation for speed, voltage, odometer, RPM, lock, cruise, and zero-start fields
+3. Packet mapping for the still-disabled live actions like lights, horn, and motor switching
+4. Validation that the same `FFF0 / FFF1 / FFF2` service family is shared across all KuKirin dashboards you want to support
 
-When that data is available, replace the placeholders in:
+When that data is available, extend:
 
 - `lib/src/services/kukirin_protocol_service.dart`
 - `lib/src/models/protocol_profile.dart`
@@ -129,4 +136,4 @@ flutter build ipa
 
 ## Recommended next milestone
 
-Connect one real KuKirin model, open the Protocol Lab screen, inspect discovered services, and capture the official app traffic. That is the missing step between this scaffold and a true production BLE controller.
+Connect one real KuKirin model, open the Protocol Lab screen, and capture a few raw FFF2 packets while changing speed, mode, cruise, and lock state. That is the missing step between the current live command build and a fully verified production telemetry controller.
