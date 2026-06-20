@@ -187,6 +187,26 @@ class KuKirinProtocolService {
         statusLine: 'Dual motor mode is not mapped for the live profile yet.',
         lastPacketHex: draftCommand(action),
       ),
+      ControlActionKind.childModeOn => snapshot.copyWith(
+        updatedAt: DateTime.now(),
+        statusLine: 'Child mode enabled.',
+        lastPacketHex: draftCommand(action),
+      ),
+      ControlActionKind.childModeOff => snapshot.copyWith(
+        updatedAt: DateTime.now(),
+        statusLine: 'Child mode disabled.',
+        lastPacketHex: draftCommand(action),
+      ),
+      ControlActionKind.adjustAccelerator => snapshot.copyWith(
+        updatedAt: DateTime.now(),
+        statusLine: 'Accelerator adjusted.',
+        lastPacketHex: draftCommand(action),
+      ),
+      ControlActionKind.resetOdom => snapshot.copyWith(
+        updatedAt: DateTime.now(),
+        statusLine: 'Odometer reset.',
+        lastPacketHex: draftCommand(action),
+      ),
     };
   }
 
@@ -212,6 +232,11 @@ class KuKirinProtocolService {
         singleMotorMode: value,
         updatedAt: DateTime.now(),
         statusLine: 'Motor mode setting is not mapped for the live profile yet.',
+        lastPacketHex: draftSetting(settingId, value),
+      ),
+      ToggleSettingId.childMode => snapshot.copyWith(
+        updatedAt: DateTime.now(),
+        statusLine: value ? 'Child mode enabled.' : 'Child mode disabled.',
         lastPacketHex: draftSetting(settingId, value),
       ),
     };
@@ -270,6 +295,10 @@ class KuKirinProtocolService {
       ControlActionKind.ecoMode => 'F04C0301',
       ControlActionKind.driveMode => 'F04C0302',
       ControlActionKind.sportMode => 'F04C0303',
+      ControlActionKind.childModeOn => 'F052033216CC003219F500321CF500',
+      ControlActionKind.childModeOff => 'F052033216F50032199801321CA602',
+      ControlActionKind.adjustAccelerator => 'F04B00B400B9008701CC01',
+      ControlActionKind.resetOdom => 'F066FF',
       ControlActionKind.lights => null,
       ControlActionKind.horn => null,
       ControlActionKind.singleMotor => null,
@@ -282,6 +311,9 @@ class KuKirinProtocolService {
       ToggleSettingId.cruiseControl => value ? 'F04C1301' : 'F04C1300',
       ToggleSettingId.zeroStart => value ? 'F04C0201' : 'F04C0200',
       ToggleSettingId.singleMotorMode => null,
+      ToggleSettingId.childMode => value
+          ? 'F052033216CC003219F500321CF500'
+          : 'F052033216F50032199801321CA602',
     };
   }
 
