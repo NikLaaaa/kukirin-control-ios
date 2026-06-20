@@ -1,4 +1,9 @@
-enum ToggleSettingId { cruiseControl, zeroStart, singleMotorMode }
+enum ToggleSettingId {
+  cruiseControl,
+  zeroStart,
+  singleMotorMode,
+  childMode,
+}
 
 class ToggleSetting {
   const ToggleSetting({
@@ -13,7 +18,9 @@ class ToggleSetting {
   final String subtitle;
   final bool value;
 
-  ToggleSetting copyWith({bool? value}) {
+  ToggleSetting copyWith({
+    bool? value,
+  }) {
     return ToggleSetting(
       id: id,
       title: title,
