@@ -509,6 +509,9 @@ class ScooterAppController extends ChangeNotifier {
         singleMotorMode: value,
         updatedAt: DateTime.now(),
       ),
+      ToggleSettingId.childMode => current.copyWith(
+        updatedAt: DateTime.now(),
+      ),
     };
   }
 
