@@ -22,9 +22,34 @@ workflows:
           pod install
           cd ..
 
-      - name: Build Release
-        script: flutter build ios --release --no-codesign
+      - name: Build unsigned Runner.app
+        script: |
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Pack Runner.app
+        script: |
+          mkdir export
+
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name Runner.app | head -1)
+
+          if [ -z "$APP_PATH" ]; then
+            echo "Runner.app not found!"
+            exit 1
+          fi
+
+          cp -R "$APP_PATH" export/Runner.app
+
+          cd export
+          zip -r Runner.zip Runner.app
 
     artifacts:
-      - build/ios/iphoneos/Runner.app
+      - export/Runner.zip
       - /tmp/xcodebuild_logs/*.log
