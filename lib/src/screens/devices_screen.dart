@@ -15,93 +15,70 @@ class DevicesScreen extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+          padding: const EdgeInsets.fromLTRB(20, 48, 20, 118),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
               Text(
-                'Search Devices',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+                'Connect',
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  height: 0.95,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(
-                controller.isPreviewOnlyPlatform
-                    ? 'This desktop build is for GUI preview. Real BLE scanning is intentionally disabled on Windows and stays in the iPhone build.'
-                    : 'Scan nearby BLE devices, connect to a scooter, and inspect what the dashboard exposes before we bind real commands.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                'Scan for nearby devices',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppPalette.textSecondary,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 20),
-              _StatusCard(controller: controller),
               const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: controller.isScanning
-                          ? controller.stopScan
-                          : controller.startScan,
-                      icon: Icon(
-                        controller.isScanning
-                            ? Icons.pause_circle
-                            : Icons.radar,
-                      ),
-                      label: Text(controller.isScanning ? 'Stop' : 'Search'),
-                    ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: controller.isScanning
+                      ? controller.stopScan
+                      : controller.startScan,
+                  icon: Icon(
+                    controller.isScanning
+                        ? Icons.pause_circle_filled
+                        : Icons.radar,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: controller.startDemoMode,
-                      icon: const Icon(Icons.smart_toy_outlined),
-                      label: const Text('Demo'),
-                    ),
-                  ),
-                ],
+                  label: Text(controller.isScanning ? 'Stop Scan' : 'Scan'),
+                ),
               ),
-              const SizedBox(height: 20),
-              Text(
-                'Bluetooth Devices',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              const SizedBox(height: 14),
+              _StatusStrip(controller: controller),
+              const SizedBox(height: 32),
+              _SectionHeader(
+                title: 'Available Devices',
+                trailing: controller.isScanning
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               if (controller.devices.isEmpty)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Text(
-                      controller.isScanning
-                          ? 'Scanning is active. Keep your scooter dashboard awake and stay within Bluetooth range.'
-                          : 'No devices collected yet. Start a scan to look for KuKirin or generic BLE peripherals.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppPalette.textSecondary,
-                      ),
-                    ),
+                _EmptyDevicePanel(controller: controller)
+              else
+                for (final device in controller.devices) ...[
+                  _DeviceTile(
+                    device: device,
+                    isConnected: controller.connectedDevice?.id == device.id,
+                    onConnect: () => controller.connectToDevice(device),
                   ),
-                ),
-              for (final device in controller.devices) ...[
-                _DeviceCard(
-                  device: device,
-                  isConnected: controller.connectedDevice?.id == device.id,
-                  onConnect: () => controller.connectToDevice(device),
-                ),
-                const SizedBox(height: 12),
-              ],
-              const SizedBox(height: 20),
-              Text(
-                'Prepared Model Families',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 12),
+                  const SizedBox(height: 10),
+                ],
+              const SizedBox(height: 24),
+              _SectionHeader(title: 'Model Profiles'),
+              const SizedBox(height: 14),
               for (final profile in controller.availableProfiles) ...[
-                _ProfileCard(profile: profile),
-                const SizedBox(height: 12),
+                _ProfileTile(profile: profile),
+                const SizedBox(height: 10),
               ],
             ]),
           ),
@@ -111,61 +88,110 @@ class DevicesScreen extends StatelessWidget {
   }
 }
 
-class _StatusCard extends StatelessWidget {
-  const _StatusCard({required this.controller});
+class _StatusStrip extends StatelessWidget {
+  const _StatusStrip({required this.controller});
 
   final ScooterAppController controller;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Bluetooth Status',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+    final isConnected = controller.hasConnectedTransport;
+
+    return _SoftPanel(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: (isConnected ? AppPalette.accentGreen : AppPalette.accent)
+                  .withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
             ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
+            child: Icon(
+              isConnected ? Icons.check_circle : Icons.bluetooth_searching,
+              color: isConnected ? AppPalette.accentGreen : AppPalette.accent,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Chip(label: Text('Adapter: ${controller.bleStatusLabel()}')),
-                Chip(label: Text('Session: ${controller.connectionLabel()}')),
-                if (controller.connectedDevice != null)
-                  Chip(label: Text(controller.connectedDevice!.displayName)),
+                Text(
+                  controller.connectionLabel(),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  controller.statusMessage,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppPalette.textSecondary,
+                    height: 1.25,
+                  ),
+                ),
+                if (controller.lastError != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    controller.lastError!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppPalette.accentDanger,
+                    ),
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              controller.statusMessage,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppPalette.textSecondary),
-            ),
-            if (controller.lastError != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                controller.lastError!,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppPalette.accentDanger),
-              ),
-            ],
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: controller.startDemoMode,
+            child: const Text('Demo'),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _DeviceCard extends StatelessWidget {
-  const _DeviceCard({
+class _EmptyDevicePanel extends StatelessWidget {
+  const _EmptyDevicePanel({required this.controller});
+
+  final ScooterAppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SoftPanel(
+      padding: const EdgeInsets.all(18),
+      child: Row(
+        children: [
+          const Icon(Icons.bluetooth_disabled, color: AppPalette.textTertiary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              controller.isScanning
+                  ? 'Scanning is active. Keep the scooter awake and close to the phone.'
+                  : 'No devices yet. Start a scan or open demo mode for a quick preview.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppPalette.textSecondary,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeviceTile extends StatelessWidget {
+  const _DeviceTile({
     required this.device,
     required this.isConnected,
     required this.onConnect,
@@ -177,121 +203,195 @@ class _DeviceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    final signalColor =
+        device.rssi >= -55 ? AppPalette.accentGreen : AppPalette.textTertiary;
+
+    return _SoftPanel(
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: device.connectable ? onConnect : null,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 13, 12, 13),
+            child: Row(
               children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppPalette.accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.bluetooth,
+                    color: AppPalette.accent,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 13),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         device.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
-                        device.looksLikeKukirin
-                            ? 'Looks like a KuKirin-family device'
-                            : 'Generic BLE peripheral',
+                        isConnected
+                            ? 'Connected'
+                            : device.looksLikeKukirin
+                                ? 'KuKirin device'
+                                : 'BLE peripheral',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppPalette.textSecondary,
+                          color: isConnected
+                              ? AppPalette.accentGreen
+                              : AppPalette.textSecondary,
+                          fontWeight:
+                              isConnected ? FontWeight.w800 : FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Chip(label: Text('RSSI ${device.rssi}')),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              device.id,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppPalette.textSecondary),
-            ),
-            if (device.advertisedServices.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text(
-                'Advertised services: ${device.advertisedServices.join(', ')}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppPalette.textSecondary,
-                ),
-              ),
-            ],
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: device.connectable ? onConnect : null,
-                    child: Text(
-                      isConnected ? 'Reconnect' : 'Connect & Open Dashboard',
+                Icon(Icons.signal_cellular_alt, color: signalColor, size: 18),
+                const SizedBox(width: 5),
+                SizedBox(
+                  width: 34,
+                  child: Text(
+                    '${device.rssi}',
+                    textAlign: TextAlign.right,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppPalette.textSecondary,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: null,
-                    child: Text(
-                      device.connectable ? 'Awaiting bind' : 'Not connectable',
-                    ),
-                  ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppPalette.accent,
+                  size: 24,
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({required this.profile});
+class _ProfileTile extends StatelessWidget {
+  const _ProfileTile({required this.profile});
 
   final ProtocolProfile profile;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return _SoftPanel(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    profile.name,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                Text(
+                  profile.name,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                Chip(label: Text(profile.verified ? 'Verified' : 'Pending')),
+                const SizedBox(height: 4),
+                Text(
+                  profile.family,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppPalette.textSecondary,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              profile.family,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppPalette.textSecondary),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: profile.verified
+                  ? AppPalette.accentGreen.withValues(alpha: 0.12)
+                  : AppPalette.panelRaised,
+              borderRadius: BorderRadius.circular(999),
             ),
-            const SizedBox(height: 10),
-            Text(profile.note, style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        ),
+            child: Text(
+              profile.verified ? 'Verified' : 'Pending',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: profile.verified
+                    ? AppPalette.accentGreen
+                    : AppPalette.textSecondary,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.trailing});
+
+  final String title;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title.toUpperCase(),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: AppPalette.textSecondary,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0,
+            ),
+          ),
+        ),
+        if (trailing != null) trailing!,
+      ],
+    );
+  }
+}
+
+class _SoftPanel extends StatelessWidget {
+  const _SoftPanel({required this.child, required this.padding});
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppPalette.panel,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppPalette.stroke),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.035),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }
