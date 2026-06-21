@@ -17,92 +17,64 @@ class KukirinHomeShell extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         return Scaffold(
-          body: Stack(
-            children: [
-              const _AtmosphereBackground(),
-              SafeArea(
-                child: IndexedStack(
-                  index: controller.selectedTab,
-                  children: [
-                    DevicesScreen(controller: controller),
-                    DashboardScreen(controller: controller),
-                    ProtocolScreen(controller: controller),
-                  ],
-                ),
+          body: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFFFFFFF),
+                  AppPalette.background,
+                  Color(0xFFF1F3F6),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-            ],
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: IndexedStack(
+                index: controller.selectedTab,
+                children: [
+                  DevicesScreen(controller: controller),
+                  DashboardScreen(controller: controller),
+                  ProtocolScreen(controller: controller),
+                ],
+              ),
+            ),
           ),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: controller.selectedTab,
-            onDestinationSelected: controller.setSelectedTab,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.bluetooth_searching_outlined),
-                selectedIcon: Icon(Icons.bluetooth_searching),
-                label: 'Search',
+          bottomNavigationBar: DecoratedBox(
+            decoration: const BoxDecoration(
+              color: AppPalette.panel,
+              border: Border(
+                top: BorderSide(color: AppPalette.stroke),
               ),
-              NavigationDestination(
-                icon: Icon(Icons.space_dashboard_outlined),
-                selectedIcon: Icon(Icons.space_dashboard),
-                label: 'Dashboard',
+            ),
+            child: SafeArea(
+              top: false,
+              child: NavigationBar(
+                selectedIndex: controller.selectedTab,
+                onDestinationSelected: controller.setSelectedTab,
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.bluetooth_outlined),
+                    selectedIcon: Icon(Icons.bluetooth),
+                    label: 'Devices',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.bolt_outlined),
+                    selectedIcon: Icon(Icons.bolt),
+                    label: 'Ride',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.tune_outlined),
+                    selectedIcon: Icon(Icons.tune),
+                    label: 'Protocol',
+                  ),
+                ],
               ),
-              NavigationDestination(
-                icon: Icon(Icons.memory_outlined),
-                selectedIcon: Icon(Icons.memory),
-                label: 'Protocol',
-              ),
-            ],
+            ),
           ),
         );
       },
-    );
-  }
-}
-
-class _AtmosphereBackground extends StatelessWidget {
-  const _AtmosphereBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned(
-            top: -120,
-            right: -80,
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppPalette.accent.withValues(alpha: 0.36),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -120,
-            left: -60,
-            child: Container(
-              width: 280,
-              height: 280,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppPalette.accentWarm.withValues(alpha: 0.28),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
