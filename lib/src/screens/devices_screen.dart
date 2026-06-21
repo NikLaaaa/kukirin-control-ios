@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../controllers/scooter_app_controller.dart';
-import '../models/protocol_profile.dart';
 import '../models/scooter_device.dart';
 import '../theme/app_theme.dart';
 
@@ -73,13 +72,6 @@ class DevicesScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                 ],
-              const SizedBox(height: 24),
-              _SectionHeader(title: 'Model Profiles'),
-              const SizedBox(height: 14),
-              for (final profile in controller.availableProfiles) ...[
-                _ProfileTile(profile: profile),
-                const SizedBox(height: 10),
-              ],
             ]),
           ),
         ),
@@ -283,61 +275,6 @@ class _DeviceTile extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ProfileTile extends StatelessWidget {
-  const _ProfileTile({required this.profile});
-
-  final ProtocolProfile profile;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SoftPanel(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  profile.name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  profile.family,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppPalette.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            decoration: BoxDecoration(
-              color: profile.verified
-                  ? AppPalette.accentGreen.withValues(alpha: 0.12)
-                  : AppPalette.panelRaised,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              profile.verified ? 'Verified' : 'Pending',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: profile.verified
-                    ? AppPalette.accentGreen
-                    : AppPalette.textSecondary,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
