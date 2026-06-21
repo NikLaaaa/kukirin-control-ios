@@ -333,55 +333,66 @@ class KuKirinProtocolService {
     List<int> packet, {
     required ScooterSnapshot previous,
   }) {
-    if (packet.length < 10) {
+    if (packet.length < 20) {
       return null;
     }
 
-    final modeValue = packet[7];
-    if (modeValue < 1 || modeValue > 3) {
-      return null;
-    }
+    final speedRaw =
+        packet[2] | (packet[3] << 8);
 
-    final speedRaw = packet[0] | (packet[1] << 8);
-    final voltageRaw = packet[2] | (packet[3] << 8);
-    final batteryPercent = packet[4];
-    final flags = packet[5];
-    final rpmRaw = packet[8] | (packet[9] << 8);
+    final modeRaw = packet[5];
 
-    if (batteryPercent > 100 || speedRaw > 2000 || voltageRaw > 2000) {
-      return null;
-    }
+    final rpmRaw =
+        packet[6] | (packet[7] << 8);
 
-    final nextMode = switch (modeValue) {
+    final voltageBits =
+        packet[8] | (packet[9] << 8);
+
+    final odoRaw =
+        packet[10] |
+        (packet[11] << 8) |
+        (packet[12] << 16) |
+        (packet[13] << 24);
+
+    final flags = packet[14];
+
+    final rideMode = switch (modeRaw) {
       1 => RideMode.eco,
       2 => RideMode.drive,
       3 => RideMode.sport,
       _ => previous.rideMode,
     };
 
-    final speed = speedRaw / 10.0;
-    final voltage = voltageRaw / 10.0;
-    final odometer = packet.length >= 14
-        ? ((packet[10]) |
-                  (packet[11] << 8) |
-                  (packet[12] << 16) |
-                  (packet[13] << 24)) /
-              10.0
-        : previous.odometerKm;
+    final speedKmh =
+        ((((speedRaw * 8168) * 60) ~/ 10000) + 300) /
+        1000.0;
+
+    final voltage =
+        voltageBits / 100.0;
+
+    int batteryPercent =
+        (((voltageBits - 582) * 100) / (772 - 582))
+            .round();
+
+    batteryPercent =
+        batteryPercent.clamp(0, 100);
+
+    final odometerKm =
+        ((odoRaw * 8168) / 10000.0) /
+        1000.0;
 
     return previous.copyWith(
-      rideMode: nextMode,
-      speedKmh: speed,
+      rideMode: rideMode,
+      speedKmh: speedKmh,
       voltage: voltage,
       batteryPercent: batteryPercent,
-      odometerKm: odometer,
-      tripKm: previous.tripKm,
-      estimatedRangeKm: batteryPercent * 0.42,
-      currentDrawA: previous.currentDrawA,
+      odometerKm: odometerKm,
       motorRpm: rpmRaw,
-      cruiseEnabled: (flags & 0x01) != 0,
-      zeroStartEnabled: (flags & 0x02) != 0,
-      locked: (flags & 0x04) != 0,
+      locked: (flags & 0x10) != 0,
+      cruiseEnabled: (flags & 0x04) != 0,
+      zeroStartEnabled: (flags & 0x02) == 0,
+      protocolBound: true,
+      isLiveData: true,
     );
   }
 }
