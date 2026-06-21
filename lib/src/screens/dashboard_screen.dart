@@ -116,17 +116,6 @@ class _RideHeader extends StatelessWidget {
             ),
           ],
         ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: IconButton(
-            onPressed: () => controller.setSelectedTab(
-              ScooterAppController.protocolTabIndex,
-            ),
-            icon: const Icon(Icons.settings_outlined),
-            color: AppPalette.textPrimary,
-            tooltip: 'Protocol',
-          ),
-        ),
       ],
     );
   }
@@ -657,6 +646,7 @@ class _SessionPanel extends StatelessWidget {
   const _SessionPanel({required this.controller, required this.snapshot});
 
   final ScooterAppController controller;
+
   final ScooterSnapshot snapshot;
 
   @override
