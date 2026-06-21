@@ -166,17 +166,10 @@ class BleScooterRepository {
       characteristicUuid: profile.writeCharacteristicUuid,
     );
 
-    if (withResponse) {
-      await _liveBle.writeCharacteristicWithResponse(
-        writeCharacteristic,
-        value: payload,
-      );
-    } else {
-      await _liveBle.writeCharacteristicWithoutResponse(
-        writeCharacteristic,
-        value: payload,
-      );
-    }
+    await _liveBle.writeCharacteristicWithoutResponse(
+      writeCharacteristic,
+      value: payload,
+    );
   }
 
   Future<void> dispose() async {
