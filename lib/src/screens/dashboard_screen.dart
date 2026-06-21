@@ -53,11 +53,6 @@ class DashboardScreen extends StatelessWidget {
                 supportsAction: controller.supportsAction,
                 onAction: controller.sendAction,
               ),
-              const SizedBox(height: 18),
-              if (!controller.hasConnectedTransport)
-                _ConnectPrompt(controller: controller)
-              else
-                _SessionPanel(controller: controller, snapshot: snapshot),
             ]),
           ),
         ),
@@ -588,100 +583,6 @@ class _ActionTile extends StatelessWidget {
   }
 }
 
-class _ConnectPrompt extends StatelessWidget {
-  const _ConnectPrompt({required this.controller});
-
-  final ScooterAppController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SoftPanel(
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Ready for preview',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 7),
-          Text(
-            controller.isPreviewOnlyPlatform
-                ? 'Use demo mode here. Live Bluetooth control stays in the iPhone build.'
-                : 'Connect a scooter from Devices, or launch demo mode to test the dashboard.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppPalette.textSecondary,
-              height: 1.35,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: controller.startDemoMode,
-                  child: const Text('Launch Demo'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => controller.setSelectedTab(
-                    ScooterAppController.searchTabIndex,
-                  ),
-                  child: const Text('Devices'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SessionPanel extends StatelessWidget {
-  const _SessionPanel({required this.controller, required this.snapshot});
-
-  final ScooterAppController controller;
-
-  final ScooterSnapshot snapshot;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SoftPanel(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Session',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: controller.disconnect,
-                child: const Text('Disconnect'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _LabelValue(label: 'Status', value: controller.statusMessage),
-          _LabelValue(label: 'Last action', value: controller.lastActionLabel),
-          _LabelValue(label: 'Packet', value: snapshot.lastPacketHex ?? 'None'),
-        ],
-      ),
-    );
-  }
-}
-
 class _CompactMetric extends StatelessWidget {
   const _CompactMetric({required this.label, required this.value});
 
@@ -707,44 +608,6 @@ class _CompactMetric extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _LabelValue extends StatelessWidget {
-  const _LabelValue({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 82,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppPalette.textSecondary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppPalette.textPrimary,
-                height: 1.25,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
