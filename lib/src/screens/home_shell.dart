@@ -4,7 +4,6 @@ import '../controllers/scooter_app_controller.dart';
 import '../theme/app_theme.dart';
 import 'dashboard_screen.dart';
 import 'devices_screen.dart';
-import 'protocol_screen.dart';
 
 class KukirinHomeShell extends StatelessWidget {
   const KukirinHomeShell({super.key, required this.controller});
@@ -36,7 +35,6 @@ class KukirinHomeShell extends StatelessWidget {
                 children: [
                   DevicesScreen(controller: controller),
                   DashboardScreen(controller: controller),
-                  ProtocolScreen(controller: controller),
                 ],
               ),
             ),
@@ -63,11 +61,6 @@ class KukirinHomeShell extends StatelessWidget {
                     icon: Icon(Icons.bolt_outlined),
                     selectedIcon: Icon(Icons.bolt),
                     label: 'Ride',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.tune_outlined),
-                    selectedIcon: Icon(Icons.tune),
-                    label: 'Protocol',
                   ),
                 ],
               ),
